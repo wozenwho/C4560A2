@@ -25,6 +25,7 @@ namespace asgn5v1
 		double[,] vertices;
 		double[,] scrnpts;
 		double[,] ctrans = new double[4,4];  //your main transformation matrix
+        double[] offset = new double[2];
 		private System.Windows.Forms.ImageList tbimages;
 		private System.Windows.Forms.ToolBar toolBar1;
 		private System.Windows.Forms.ToolBarButton transleftbtn;
@@ -442,10 +443,10 @@ namespace asgn5v1
 			vertices = new double[coorddata.Count,4];
 			numpts = 0;
 			string [] text = null;
-            int maxW = 0;
-            int maxH = 0;
-            int minW = 0;
-            int minH = 0;
+            double maxW = 0;
+            double maxH = 0;
+            double minW = -999;
+            double minH = -999;
 			for (int i = 0; i < coorddata.Count; i++)
 			{
 				text = coorddata[i].ToString().Split(' ',',');
@@ -456,15 +457,18 @@ namespace asgn5v1
                 vertices[numpts,2]= double.Parse(text[2]);
 				vertices[numpts,3] = 1.0d;
 
-                vertices[numpts, 0] *= ClientSize.Width/128;
-                vertices[numpts, 1] *= ClientSize.Width/128;
-                //vertices[numpts, 0] += ClientSize.Width / 2;
-                //vertices[numpts, 1] += ClientSize.Height / 2;
+                vertices[numpts, 0] *= ClientSize.Width / 128;
+                vertices[numpts, 1] *= -ClientSize.Width / 128;
+                if (minW == -999 && minH == -999)
+                {
+                    minW = vertices[numpts, 0];
+                    minH = vertices[numpts, 1];
+                }
                 if (vertices[numpts, 0] > maxW)
                 {
                     maxW = (int) vertices[numpts, 0];
                 }
-                if (vertices[numpts, 1] > maxH)
+                if (vertices[numpts, 1] > maxH && vertices[numpts, 1] >= 0)
                 {
                     maxH = (int)vertices[numpts, 1];
                 }
@@ -472,24 +476,23 @@ namespace asgn5v1
                 {
                     minW = (int)vertices[numpts, 0];
                 }
-                if (vertices[numpts, 1] < minH)
+                if (vertices[numpts, 1] < minH && vertices[numpts, 1] >= 0)
                 {
                     minH = (int)vertices[numpts, 1];
                 }
-
-
                 numpts++;						
 			}
-            int wOffset = (maxW - minW) / 2;
-            int hOffset = (maxH - minH) / 2;
+            offset[0] = (maxW - minW) / 2;
+            offset[1] = (maxH - minH) / 2;
 
             for (int i = 0; i < numpts; i++)
             {
-                vertices[i, 0] += ClientSize.Width / 2 - wOffset;
-                vertices[i, 1] += ClientSize.Height / 2 - hOffset;
+                vertices[i, 0] += ClientSize.Width / 2 - offset[0];
+                vertices[i, 1] += ClientSize.Height / 2 + 1.5*offset[1];
+                //vertices[i, 1] += offset[1];
             }
-			
-		}// end of DecodeCoords
+
+        }// end of DecodeCoords
 
 		void DecodeLines(ArrayList linesdata)
 		{
@@ -511,10 +514,16 @@ namespace asgn5v1
 		{
 			for (int i = 0; i < nrow;i++) 
 			{
-				for (int j = 0; j < ncol; j++) A[i,j] = 0.0d;
+				for (int j = 0; j < ncol; j++)
+                    A[i,j] = 0.0d;
 				A[i,i] = 1.0d;
 			}
-		}// end of setIdentity
+            //A[0, 0] = 4.0;
+            //A[1, 1] = 4.0;
+            //A[2, 2] = 4.0;
+            //A[0, 3] = -offset[0];
+            //A[1, 3] = -offset[1];
+        }// end of setIdentity
       
 
 		private void Transformer_Load(object sender, System.EventArgs e)
