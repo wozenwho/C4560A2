@@ -595,15 +595,28 @@ namespace asgn5v1
 			}
 			if (e.Button == rotxby1btn) 
 			{
-				
-			}
+                ctrans[0, 0] *= Math.Cos(0.05);
+                ctrans[0, 1] *= - Math.Sin(0.05);
+                ctrans[1, 0] *= Math.Sin(0.05);
+                ctrans[1, 1] *= Math.Cos(0.05);
+                Refresh();
+
+            }
 			if (e.Button == rotyby1btn) 
 			{
-				
+                ctrans[0, 0] *= Math.Cos(0.05);
+                ctrans[0, 1] *= -Math.Sin(0.05);
+                ctrans[1, 0] *= Math.Sin(0.05);
+                ctrans[1, 1] *= Math.Cos(0.05);
+                Refresh();
 			}
 			if (e.Button == rotzby1btn) 
 			{
-				
+                ctrans[0, 0] *= Math.Cos(0.05);
+                ctrans[0, 1] *= -Math.Sin(0.05);
+                ctrans[1, 0] *= Math.Sin(0.05);
+                ctrans[1, 1] *= Math.Cos(0.05);
+                Refresh();
 			}
 
 			if (e.Button == rotxbtn) 
