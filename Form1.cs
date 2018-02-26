@@ -51,7 +51,12 @@ namespace asgn5v1
 		private System.Windows.Forms.ToolBarButton exitbtn;
 		int[,] lines;
 
-		public Transformer()
+        double maxW = 0;
+        double maxH = 0;
+        double minW = -999;
+        double minH = -999;
+
+        public Transformer()
 		{
 			//
 			// Required for Windows Form Designer support
@@ -347,7 +352,14 @@ namespace asgn5v1
                     {
                         temp = 0.0d;
                         for (k = 0; k < 4; k++)
-                            temp += vertices[i, k] * ctrans[k, j];
+                        {
+                            double vertex = vertices[i, k];
+                            double transf = ctrans[k, j];
+                            //temp += vertices[i, k] * ctrans[k, j];
+                            temp += vertex * transf;
+                            //temp += ctrans[j, 3];
+                        }
+                        temp += ctrans[j, 3];    
                         scrnpts[i, j] = temp;
                     }
                 }
@@ -443,10 +455,7 @@ namespace asgn5v1
 			vertices = new double[coorddata.Count,4];
 			numpts = 0;
 			string [] text = null;
-            double maxW = 0;
-            double maxH = 0;
-            double minW = -999;
-            double minH = -999;
+            
 			for (int i = 0; i < coorddata.Count; i++)
 			{
 				text = coorddata[i].ToString().Split(' ',',');
@@ -457,8 +466,8 @@ namespace asgn5v1
                 vertices[numpts,2]= double.Parse(text[2]);
 				vertices[numpts,3] = 1.0d;
 
-                vertices[numpts, 0] *= ClientSize.Width / 128;
-                vertices[numpts, 1] *= -ClientSize.Width / 128;
+                //vertices[numpts, 0] *= ClientSize.Width / 128;
+                //vertices[numpts, 1] *= -ClientSize.Width / 128;
                 if (minW == -999 && minH == -999)
                 {
                     minW = vertices[numpts, 0];
@@ -485,12 +494,12 @@ namespace asgn5v1
             offset[0] = (maxW - minW) / 2;
             offset[1] = (maxH - minH) / 2;
 
-            for (int i = 0; i < numpts; i++)
-            {
-                vertices[i, 0] += ClientSize.Width / 2 - offset[0];
-                vertices[i, 1] += ClientSize.Height / 2 + 1.5*offset[1];
-                //vertices[i, 1] += offset[1];
-            }
+            //for (int i = 0; i < numpts; i++)
+            //{
+            //    //vertices[i, 0] += ClientSize.Width / 2 - offset[0];
+            //    //vertices[i, 1] += ClientSize.Height / 2 + 1.5*offset[1];
+            //    //vertices[i, 1] += offset[1];
+            //}
 
         }// end of DecodeCoords
 
@@ -518,11 +527,9 @@ namespace asgn5v1
                     A[i,j] = 0.0d;
 				A[i,i] = 1.0d;
 			}
-            //A[0, 0] = 4.0;
-            //A[1, 1] = 4.0;
-            //A[2, 2] = 4.0;
-            //A[0, 3] = -offset[0];
-            //A[1, 3] = -offset[1];
+            A[1, 1] = -1;
+            A[0, 3] = ClientSize.Width / 2 - offset[0];
+            A[1, 3] = ClientSize.Height / 2  + 1.5 * offset[1];
         }// end of setIdentity
       
 
@@ -535,28 +542,56 @@ namespace asgn5v1
 		{
 			if (e.Button == transleftbtn)
 			{
+                //for (int i = 0; i < 4; i++)
+                //{
+                //    for (int j = 0; j < 4; j++)
+                //    {
+                //        ctrans[i, j] = 0.0d;
+                //    }
+                //    ctrans[i, i] = 1.0d;
+                //}
+                ctrans[0, 3] -= 10;
 				Refresh();
 			}
 			if (e.Button == transrightbtn) 
 			{
+                ctrans[0, 3] += 10;
 				Refresh();
 			}
 			if (e.Button == transupbtn)
 			{
+                ctrans[1, 3] -= 10;
 				Refresh();
 			}
 			
 			if(e.Button == transdownbtn)
 			{
+                ctrans[1, 3] += 10;
 				Refresh();
 			}
 			if (e.Button == scaleupbtn) 
 			{
+                ctrans[0, 0] *= 1.1;
+                ctrans[1, 1] *= 1.1;
+                ctrans[2, 2] *= 1.1;
+                //offset[0] -= (1.1 * maxW - maxW) / 2;
+                //offset[1] += (1.1 * maxH - maxH) / 2;
+                maxH *= 1.1;
+                maxW *= 1.1;
+                ctrans[0, 3] -= (1.1 * maxW - maxW) / 2;
+                ctrans[1, 3] += (1.1 * maxH - maxH) / 2;
 				Refresh();
 			}
 			if (e.Button == scaledownbtn) 
 			{
-				Refresh();
+                ctrans[0, 0] /= 1.1;
+                ctrans[1, 1] /= 1.1;
+                ctrans[2, 2] /= 1.1;
+                maxH /= 1.1;
+                maxW /= 1.1;
+                ctrans[0, 3] += (1.1 * maxW - maxW) / 2;
+                ctrans[1, 3] -= (1.1 * maxH - maxH) / 2;
+                Refresh();
 			}
 			if (e.Button == rotxby1btn) 
 			{

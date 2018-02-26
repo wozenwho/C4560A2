@@ -49,3 +49,12 @@ C:\Users\Werz\Desktop\Term4\c4560a2\obj\Debug\asgn5v1.csproj.GenerateResource.Ca
 C:\Users\Werz\Desktop\Term4\c4560a2\obj\Debug\asgn5v1.csproj.CoreCompileInputs.cache
 C:\Users\Werz\Desktop\Term4\c4560a2\obj\Debug\asgn5v1.exe
 C:\Users\Werz\Desktop\Term4\c4560a2\obj\Debug\asgn5v1.pdb
+C:\Users\Planetarium\Desktop\BCIT\Term4\COMP4560\c4560A2\bin\Debug\asgn5v1.exe
+C:\Users\Planetarium\Desktop\BCIT\Term4\COMP4560\c4560A2\bin\Debug\asgn5v1.pdb
+C:\Users\Planetarium\Desktop\BCIT\Term4\COMP4560\c4560A2\obj\Debug\asgn5v1.csprojResolveAssemblyReference.cache
+C:\Users\Planetarium\Desktop\BCIT\Term4\COMP4560\c4560A2\obj\Debug\asgn5v1.AboutDialogBox.resources
+C:\Users\Planetarium\Desktop\BCIT\Term4\COMP4560\c4560A2\obj\Debug\asgn5v1.Transformer.resources
+C:\Users\Planetarium\Desktop\BCIT\Term4\COMP4560\c4560A2\obj\Debug\asgn5v1.csproj.GenerateResource.Cache
+C:\Users\Planetarium\Desktop\BCIT\Term4\COMP4560\c4560A2\obj\Debug\asgn5v1.csproj.CoreCompileInputs.cache
+C:\Users\Planetarium\Desktop\BCIT\Term4\COMP4560\c4560A2\obj\Debug\asgn5v1.exe
+C:\Users\Planetarium\Desktop\BCIT\Term4\COMP4560\c4560A2\obj\Debug\asgn5v1.pdb
