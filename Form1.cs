@@ -51,10 +51,35 @@ namespace asgn5v1
 		private System.Windows.Forms.ToolBarButton exitbtn;
 		int[,] lines;
 
+        double[,] centreMat = new double[4, 4];
+        double[,] originMat = new double[4, 4];
+        double[,] scaleMat = new double[4, 4];
+        double[,] translMat = new double[4, 4];
+        double[,] reflectMat = new double[4, 4];
+        double[,] translDownMat = new double[4, 4];
+        double[,] translUpMat = new double[4, 4];
+        double[,] translLeftMat = new double[4, 4];
+        double[,] translRightMat = new double[4, 4];
+        double[,] scaleUpMat = new double[4, 4];
+        double[,] scaleDownMat = new double[4, 4];
+        double[,] rotateXMat = new double[4, 4];
+        double[,] rotateYMat = new double[4, 4];
+        double[,] rotateZMat = new double[4, 4];
+
+        double[,] shearRightMat = new double[4, 4];
+        double[,] shearLeftMat = new double[4, 4];
+
+        double[] origin = new double[3];
+
         double maxW = 0;
         double maxH = 0;
         double minW = -999;
         double minH = -999;
+        double midX;
+        double midY;
+        double midZ;
+        double screenMidX;
+        double screenMidY;
 
         public Transformer()
 		{
@@ -353,11 +378,8 @@ namespace asgn5v1
                         temp = 0.0d;
                         for (k = 0; k < 4; k++)
                         {
-                            double vertex = vertices[i, k];
-                            double transf = ctrans[k, j];
-                            temp += vertex * transf;
-                         }
-                        temp += ctrans[j, 3];    
+                            temp += vertices[i, k] * ctrans[k, j];
+                        }
                         scrnpts[i, j] = temp;
                     }
                 }
@@ -443,8 +465,62 @@ namespace asgn5v1
 				return false;
 			}
 			scrnpts = new double[numpts,4];
+            
+
 			setIdentity(ctrans,4,4);  //initialize transformation matrix to identity
-			return true;
+
+            
+
+            setIdentity(reflectMat, 4, 4);
+            reflectMat[1, 1] = -1;
+            ctrans = MatrixMultiplicationForDays(reflectMat, ctrans);
+
+            setIdentity(translMat, 4, 4);
+            origin[0] = -vertices[0, 0];
+            origin[1] = -vertices[0, 1];
+            origin[2] = -vertices[0, 2];
+            for (int i = 0; i < 3; i++)
+                translMat[3, i] = origin[i];
+            ctrans = MatrixMultiplicationForDays(translMat, ctrans);
+
+            setIdentity(scaleMat, 4, 4);
+            double scale = this.Height / 2 / (maxH - minH);
+            scaleMat[0, 0] = scale;
+            scaleMat[1, 1] = scale;
+            scaleMat[2, 2] = scale;
+            scaleMat[3, 0] = -scale * midX;
+            scaleMat[3, 1] = -scale * midY;
+            ctrans = MatrixMultiplicationForDays(scaleMat, ctrans);
+
+            setIdentity(centreMat, 4, 4);
+            centreMat[3, 0] = 50;
+            centreMat[3, 1] = 50;
+            ctrans = MatrixMultiplicationForDays(centreMat, ctrans);
+
+            setIdentity(translDownMat, 4, 4);
+            translDownMat[3, 1] = -10;
+            setIdentity(translUpMat, 4, 4);
+            translUpMat[3, 1] = 10;
+            setIdentity(translLeftMat, 4, 4);
+            translLeftMat[3, 0] = -10;
+            setIdentity(translRightMat, 4, 4);
+            translRightMat[3, 0] = 10;
+
+            setIdentity(scaleUpMat, 4, 4);
+            scaleUpMat[0, 0] = 1.1;
+            scaleUpMat[1, 1] = 1.1;
+            scaleUpMat[2, 2] = 1.1;
+            setIdentity(scaleDownMat, 4, 4);
+            scaleDownMat[0, 0] = 0.9;
+            scaleDownMat[1, 1] = 0.9;
+            scaleDownMat[2, 2] = 0.9;
+
+            setIdentity(rotateXMat, 4, 4);
+            setIdentity(rotateYMat, 4, 4);
+            setIdentity(rotateZMat, 4, 4);
+
+
+            return true;
 		} // end of GetNewData
 
 		void DecodeCoords(ArrayList coorddata)
@@ -464,8 +540,6 @@ namespace asgn5v1
                 vertices[numpts,2]= double.Parse(text[2]);
 				vertices[numpts,3] = 1.0d;
 
-                //vertices[numpts, 0] *= ClientSize.Width / 128;
-                //vertices[numpts, 1] *= -ClientSize.Width / 128;
                 if (minW == -999 && minH == -999)
                 {
                     minW = vertices[numpts, 0];
@@ -489,15 +563,9 @@ namespace asgn5v1
                 }
                 numpts++;						
 			}
-            offset[0] = (maxW - minW) / 2;
-            offset[1] = (maxH - minH) / 2;
 
-            //for (int i = 0; i < numpts; i++)
-            //{
-            //    //vertices[i, 0] += ClientSize.Width / 2 - offset[0];
-            //    //vertices[i, 1] += ClientSize.Height / 2 + 1.5*offset[1];
-            //    //vertices[i, 1] += offset[1];
-            //}
+            midX = (maxW - minW) / 2;
+            midY = (maxH - minH) / 2;
 
         }// end of DecodeCoords
 
@@ -525,14 +593,11 @@ namespace asgn5v1
                     A[i,j] = 0.0d;
 				A[i,i] = 1.0d;
 			}
-            A[0, 0] = 1;
-            A[1, 1] = -1;
-            A[0, 3] = ClientSize.Width / 2 - offset[0];
-            A[1, 3] = ClientSize.Height / 2  + 1.5 *offset[1];
-        }// end of setIdentity
-      
 
-		private void Transformer_Load(object sender, System.EventArgs e)
+        }// end of setIdentity
+
+
+        private void Transformer_Load(object sender, System.EventArgs e)
 		{
 			
 		}
@@ -541,149 +606,56 @@ namespace asgn5v1
 		{
 			if (e.Button == transleftbtn)
 			{
-                //for (int i = 0; i < 4; i++)
-                //{
-                //    for (int j = 0; j < 4; j++)
-                //    {
-                //        ctrans[i, j] = 0.0d;
-                //    }
-                //    ctrans[i, i] = 1.0d;
-                //}
-                ctrans[0, 3] -= 10;
+                ctrans = MatrixMultiplicationForDays(translLeftMat, ctrans);
 				Refresh();
 			}
 			if (e.Button == transrightbtn) 
 			{
-                ctrans[0, 3] += 10;
-				Refresh();
+                ctrans = MatrixMultiplicationForDays(translRightMat, ctrans);
+                Refresh();
 			}
 			if (e.Button == transupbtn)
 			{
-                ctrans[1, 3] -= 10;
-				Refresh();
+                ctrans = MatrixMultiplicationForDays(translUpMat, ctrans);
+                Refresh();
 			}
 			
 			if(e.Button == transdownbtn)
 			{
-                ctrans[1, 3] += 10;
-				Refresh();
+                ctrans = MatrixMultiplicationForDays(translDownMat, ctrans);
+                Refresh();
 			}
 			if (e.Button == scaleupbtn) 
 			{
-                ctrans[0, 0] *= 1.1;
-                ctrans[1, 1] *= 1.1;
-                ctrans[2, 2] *= 1.1;
-                maxH *= 1.1;
-                maxW *= 1.1;
-                ctrans[0, 3] -= (1.1 * maxW - maxW) / 2;
-                ctrans[1, 3] += (1.1 * maxH - maxH) / 2;
-				Refresh();
+                ctrans = MatrixMultiplicationForDays(scaleUpMat, ctrans);
+                Refresh();
 			}
 			if (e.Button == scaledownbtn) 
 			{
-                ctrans[0, 0] /= 1.1;
-                ctrans[1, 1] /= 1.1;
-                ctrans[2, 2] /= 1.1;
-                maxH /= 1.1;
-                maxW /= 1.1;
-                ctrans[0, 3] += (1.1 * maxW - maxW) / 2;
-                ctrans[1, 3] -= (1.1 * maxH - maxH) / 2;
+                ctrans = MatrixMultiplicationForDays(scaleDownMat, ctrans);
                 Refresh();
 			}
             if (e.Button == rotxby1btn)
             {
-                double[,] xRotationMatrix = new double[4, 4];
-                xRotationMatrix[1, 1] = Math.Cos(0.05);
-                xRotationMatrix[1, 2] = Math.Sin(0.05);
-                xRotationMatrix[2, 1] = -Math.Sin(0.05);
-                xRotationMatrix[2, 2] = Math.Cos(0.05);
-                xRotationMatrix[0, 0] = 1;
-                xRotationMatrix[3, 3] = 1;
-                double[,] originMatrix = new double[4, 4];
-                originMatrix[0, 3] = -ctrans[0, 3] - offset[0];
-                originMatrix[1, 3] = -ctrans[1, 3] - offset[1];
-                originMatrix[2, 3] = -ctrans[2, 3];
-                for (int i = 0; i < 4; i++)
-                    originMatrix[i, i] = 1;
-                double[,] rtransMatrix = new double[4, 4];
-                originMatrix[0, 3] = ctrans[0, 3] + offset[0];
-                originMatrix[1, 3] = ctrans[1, 3] + offset[1];
-                originMatrix[2, 3] = ctrans[2, 3];
-                for (int i = 0; i < 4; i++)
-                    rtransMatrix[i, i] = 1;
-                double[,] temp = new double[4, 4];
-
-                temp = MatrixMultiplicationForDays(originMatrix, xRotationMatrix);
-                temp = MatrixMultiplicationForDays(temp, rtransMatrix);
-
-                ctrans = MatrixMultiplicationForDays(xRotationMatrix, ctrans);
-
+                ctrans = MatrixMultiplicationForDays(rotateXMat, ctrans);
                 Refresh();
 
             }
 			if (e.Button == rotyby1btn) 
 			{
-                double[,] yRotationMatrix = new double[4, 4];
-                yRotationMatrix[0, 0] = Math.Cos(0.05);
-                yRotationMatrix[2, 0] = Math.Sin(0.05);
-                yRotationMatrix[0, 2] = -Math.Sin(0.05);
-                yRotationMatrix[2, 2] = Math.Cos(0.05);
-                yRotationMatrix[1, 1] = 1;
-                yRotationMatrix[3, 3] = 1;
-                double[,] originMatrix = new double[4, 4];
-                originMatrix[0, 3] = -ctrans[0, 3] - offset[0];
-                originMatrix[1, 3] = -ctrans[1, 3] - offset[1];
-                originMatrix[2, 3] = -ctrans[2, 3];
-                for (int i = 0; i < 4; i++)
-                    originMatrix[i, i] = 1;
-                double[,] rtransMatrix = new double[4, 4];
-                originMatrix[0, 3] = ctrans[0, 3] + offset[0];
-                originMatrix[1, 3] = ctrans[1, 3] + offset[1];
-                originMatrix[2, 3] = ctrans[2, 3];
-                for (int i = 0; i < 4; i++)
-                    rtransMatrix[i, i] = 1;
-                double[,] temp = new double[4, 4];
-
-                temp = MatrixMultiplicationForDays(originMatrix, yRotationMatrix);
-                temp = MatrixMultiplicationForDays(temp, rtransMatrix);
-
-                ctrans = MatrixMultiplicationForDays(yRotationMatrix, ctrans);
+                ctrans = MatrixMultiplicationForDays(rotateYMat, ctrans);
                 Refresh();
 			}
 			if (e.Button == rotzby1btn) 
 			{
-                double[,] zRotationMatrix = new double[4, 4];
-                zRotationMatrix[0, 0] = Math.Cos(0.05);
-                zRotationMatrix[1, 0] = Math.Sin(0.05);
-                zRotationMatrix[0, 1] = -Math.Sin(0.05);
-                zRotationMatrix[1, 1] = Math.Cos(0.05);
-                zRotationMatrix[2, 2] = 1;
-                zRotationMatrix[3, 3] = 1;
-                double[,] originMatrix = new double[4, 4];
-                originMatrix[0, 3] = -ctrans[0, 3] - offset[0];
-                originMatrix[1, 3] = -ctrans[1, 3] - offset[1];
-                originMatrix[2, 3] = -ctrans[2, 3];
-                for (int i = 0; i < 4; i++)
-                    originMatrix[i, i] = 1;
-                double[,] rtransMatrix = new double[4, 4];
-                originMatrix[0, 3] = ctrans[0, 3] + offset[0];
-                originMatrix[1, 3] = ctrans[1, 3] + offset[1];
-                originMatrix[2, 3] = ctrans[2, 3];
-                for (int i = 0; i < 4; i++)
-                    rtransMatrix[i, i] = 1;
-                double[,] temp = new double[4, 4];
-
-                temp = MatrixMultiplicationForDays(originMatrix, zRotationMatrix);
-                temp = MatrixMultiplicationForDays(temp, rtransMatrix);
-
-                ctrans = MatrixMultiplicationForDays(zRotationMatrix, ctrans);
+                ctrans = MatrixMultiplicationForDays(rotateZMat, ctrans);
                 Refresh();
 			}
 
 			if (e.Button == rotxbtn) 
 			{
-				
-			}
+                Refresh();
+            }
 			if (e.Button == rotybtn) 
 			{
 				
@@ -716,38 +688,32 @@ namespace asgn5v1
 
 		}
 
-
         private double[,] MatrixMultiplicationForDays(double[,] transfMatrix, double[,] origMatrix)
         {
             
             double[,] newMatrix = new double[4, 4];
             
             double temp;
-           
-            
-            for (int i = 0; i < 4; i++)
+            double d1;
+            double d2;
+            for (int row = 0; row < 4; row++)
             {
-                for (int j = 0; j < 4; j++)
+                for (int col = 0; col < 4; col++)
                 {
                     temp = 0.0d;
                     for (int k = 0; k < 4; k++)
                     {
-                        double d1 = origMatrix[i, k];
-                        double d2 = transfMatrix[k, j];
-                        temp += origMatrix[i, k] * transfMatrix[k, j];
+                        d1 = transfMatrix[row, k];
+                        d2 = origMatrix[k, col];
+                        temp += transfMatrix[row, k] * origMatrix[k, col];
                     }
-                    newMatrix[i, j] = temp;
+                    newMatrix[row, col] = temp;
                 } 
             }
             return newMatrix;
         }
 
-        private void RotateY()
-        {
-
-        }
-
-        private void RotateZ()
+        private void rescale()
         {
 
         }
