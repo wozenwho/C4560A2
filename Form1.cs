@@ -465,58 +465,75 @@ namespace asgn5v1
 				return false;
 			}
 			scrnpts = new double[numpts,4];
-            
 
 			setIdentity(ctrans,4,4);  //initialize transformation matrix to identity
 
-            
-
-            setIdentity(reflectMat, 4, 4);
-            reflectMat[1, 1] = -1;
-            ctrans = MatrixMultiplicationForDays(reflectMat, ctrans);
-
+            //Initial translate, scale, reflection, and translate matrices
             setIdentity(translMat, 4, 4);
             origin[0] = -vertices[0, 0];
             origin[1] = -vertices[0, 1];
             origin[2] = -vertices[0, 2];
             for (int i = 0; i < 3; i++)
                 translMat[3, i] = origin[i];
-            ctrans = MatrixMultiplicationForDays(translMat, ctrans);
-
+            
             setIdentity(scaleMat, 4, 4);
             double scale = this.Height / 2 / (maxH - minH);
             scaleMat[0, 0] = scale;
             scaleMat[1, 1] = scale;
             scaleMat[2, 2] = scale;
-            scaleMat[3, 0] = -scale * midX;
-            scaleMat[3, 1] = -scale * midY;
-            ctrans = MatrixMultiplicationForDays(scaleMat, ctrans);
-
+            //scaleMat[3, 0] = -scale * midX;
+            //scaleMat[3, 1] = -scale * midY;
+            
+            setIdentity(reflectMat, 4, 4);
+            reflectMat[1, 1] = -1;
+            
             setIdentity(centreMat, 4, 4);
-            centreMat[3, 0] = 50;
-            centreMat[3, 1] = 50;
+            centreMat[3, 0] = this.Width / 2;
+            centreMat[3, 1] = this.Height / 2;
+            
+            ctrans = MatrixMultiplicationForDays(translMat, ctrans);
+            ctrans = MatrixMultiplicationForDays(scaleMat, ctrans);
+            ctrans = MatrixMultiplicationForDays(reflectMat, ctrans);
             ctrans = MatrixMultiplicationForDays(centreMat, ctrans);
 
+
+
+
+            //Sets translate down matrix
             setIdentity(translDownMat, 4, 4);
-            translDownMat[3, 1] = -10;
+            translDownMat[3, 1] = 10;
+
+            //Sets translate up matrix
             setIdentity(translUpMat, 4, 4);
-            translUpMat[3, 1] = 10;
+            translUpMat[3, 1] = -10;
+
+            //Sets translate left matrix
             setIdentity(translLeftMat, 4, 4);
             translLeftMat[3, 0] = -10;
+
+            //Sets translate right matrix
             setIdentity(translRightMat, 4, 4);
             translRightMat[3, 0] = 10;
 
+            //Sets scale up matrix
             setIdentity(scaleUpMat, 4, 4);
             scaleUpMat[0, 0] = 1.1;
             scaleUpMat[1, 1] = 1.1;
             scaleUpMat[2, 2] = 1.1;
+
+            //Sets scale down matrix
             setIdentity(scaleDownMat, 4, 4);
             scaleDownMat[0, 0] = 0.9;
             scaleDownMat[1, 1] = 0.9;
             scaleDownMat[2, 2] = 0.9;
 
+            //Sets rotate x matrix
             setIdentity(rotateXMat, 4, 4);
+
+            //Sets rotate y matrix
             setIdentity(rotateYMat, 4, 4);
+
+            //Sets rotate z matrix
             setIdentity(rotateZMat, 4, 4);
 
 
@@ -606,6 +623,7 @@ namespace asgn5v1
 		{
 			if (e.Button == transleftbtn)
 			{
+                
                 ctrans = MatrixMultiplicationForDays(translLeftMat, ctrans);
 				Refresh();
 			}
@@ -627,7 +645,22 @@ namespace asgn5v1
 			}
 			if (e.Button == scaleupbtn) 
 			{
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 0] = -scrnpts[0, 0];
+                originMatrix[3, 1] = -scrnpts[0, 1];
+                originMatrix[3, 2] = -scrnpts[0, 2];
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 0] = scrnpts[0, 0];
+                deOriginMatrix[3, 1] = scrnpts[0, 1];
+                deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
                 ctrans = MatrixMultiplicationForDays(scaleUpMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+
                 Refresh();
 			}
 			if (e.Button == scaledownbtn) 
@@ -705,7 +738,7 @@ namespace asgn5v1
                     {
                         d1 = transfMatrix[row, k];
                         d2 = origMatrix[k, col];
-                        temp += transfMatrix[row, k] * origMatrix[k, col];
+                        temp += origMatrix[row, k] * transfMatrix[k, col];
                     }
                     newMatrix[row, col] = temp;
                 } 
