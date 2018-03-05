@@ -6,50 +6,53 @@ using System.Windows.Forms;
 using System.Data;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace asgn5v1
 {
-	/// <summary>
-	/// Summary description for Transformer.
-	/// </summary>
-	public class Transformer : System.Windows.Forms.Form
-	{
-		private System.ComponentModel.IContainer components;
-		//private bool GetNewData();
+    /// <summary>
+    /// Summary description for Transformer.
+    /// </summary>
+    public class Transformer : System.Windows.Forms.Form
+    {
+        private System.ComponentModel.IContainer components;
+        //private bool GetNewData();
 
-		// basic data for Transformer
+        // basic data for Transformer
 
-		int numpts = 0;
-		int numlines = 0;
-		bool gooddata = false;		
-		double[,] vertices;
-		double[,] scrnpts;
-		double[,] ctrans = new double[4,4];  //your main transformation matrix
+        int numpts = 0;
+        int numlines = 0;
+        bool gooddata = false;
+        double[,] vertices;
+        double[,] scrnpts;
+        double[,] ctrans = new double[4, 4];  //your main transformation matrix
         double[] offset = new double[2];
-		private System.Windows.Forms.ImageList tbimages;
-		private System.Windows.Forms.ToolBar toolBar1;
-		private System.Windows.Forms.ToolBarButton transleftbtn;
-		private System.Windows.Forms.ToolBarButton transrightbtn;
-		private System.Windows.Forms.ToolBarButton transupbtn;
-		private System.Windows.Forms.ToolBarButton transdownbtn;
-		private System.Windows.Forms.ToolBarButton toolBarButton1;
-		private System.Windows.Forms.ToolBarButton scaleupbtn;
-		private System.Windows.Forms.ToolBarButton scaledownbtn;
-		private System.Windows.Forms.ToolBarButton toolBarButton2;
-		private System.Windows.Forms.ToolBarButton rotxby1btn;
-		private System.Windows.Forms.ToolBarButton rotyby1btn;
-		private System.Windows.Forms.ToolBarButton rotzby1btn;
-		private System.Windows.Forms.ToolBarButton toolBarButton3;
-		private System.Windows.Forms.ToolBarButton rotxbtn;
-		private System.Windows.Forms.ToolBarButton rotybtn;
-		private System.Windows.Forms.ToolBarButton rotzbtn;
-		private System.Windows.Forms.ToolBarButton toolBarButton4;
-		private System.Windows.Forms.ToolBarButton shearrightbtn;
-		private System.Windows.Forms.ToolBarButton shearleftbtn;
-		private System.Windows.Forms.ToolBarButton toolBarButton5;
-		private System.Windows.Forms.ToolBarButton resetbtn;
-		private System.Windows.Forms.ToolBarButton exitbtn;
-		int[,] lines;
+        private System.Windows.Forms.ImageList tbimages;
+        private System.Windows.Forms.ToolBar toolBar1;
+        private System.Windows.Forms.ToolBarButton transleftbtn;
+        private System.Windows.Forms.ToolBarButton transrightbtn;
+        private System.Windows.Forms.ToolBarButton transupbtn;
+        private System.Windows.Forms.ToolBarButton transdownbtn;
+        private System.Windows.Forms.ToolBarButton toolBarButton1;
+        private System.Windows.Forms.ToolBarButton scaleupbtn;
+        private System.Windows.Forms.ToolBarButton scaledownbtn;
+        private System.Windows.Forms.ToolBarButton toolBarButton2;
+        private System.Windows.Forms.ToolBarButton rotxby1btn;
+        private System.Windows.Forms.ToolBarButton rotyby1btn;
+        private System.Windows.Forms.ToolBarButton rotzby1btn;
+        private System.Windows.Forms.ToolBarButton toolBarButton3;
+        private System.Windows.Forms.ToolBarButton rotxbtn;
+        private System.Windows.Forms.ToolBarButton rotybtn;
+        private System.Windows.Forms.ToolBarButton rotzbtn;
+        private System.Windows.Forms.ToolBarButton toolBarButton4;
+        private System.Windows.Forms.ToolBarButton shearrightbtn;
+        private System.Windows.Forms.ToolBarButton shearleftbtn;
+        private System.Windows.Forms.ToolBarButton toolBarButton5;
+        private System.Windows.Forms.ToolBarButton resetbtn;
+        private System.Windows.Forms.ToolBarButton exitbtn;
+        int[,] lines;
+
+        private bool running;
 
         double[,] centreMat = new double[4, 4];
         double[,] originMat = new double[4, 4];
@@ -66,10 +69,13 @@ namespace asgn5v1
         double[,] rotateYMat = new double[4, 4];
         double[,] rotateZMat = new double[4, 4];
 
+        double[,] initialMat = new double[4, 4];
+
         double[,] shearRightMat = new double[4, 4];
         double[,] shearLeftMat = new double[4, 4];
 
         double[] origin = new double[3];
+        double[] shearingThings = new double[4];
 
         double maxW = 0;
         double maxH = 0;
@@ -81,58 +87,64 @@ namespace asgn5v1
         double screenMidX;
         double screenMidY;
 
+        //Timer variables
+        System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+        bool rotX = false;
+        bool rotY = false;
+        bool rotZ = false;
+
         public Transformer()
-		{
-			//
-			// Required for Windows Form Designer support
-			//
-			InitializeComponent();
+        {
+            //
+            // Required for Windows Form Designer support
+            //
+            InitializeComponent();
 
-			//
-			// TODO: Add any constructor code after InitializeComponent call
-			//
-			this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
-			this.SetStyle(ControlStyles.UserPaint, true);
-			this.SetStyle(ControlStyles.DoubleBuffer, true);
-			Text = "COMP 4560:  Assignment 5 (200830) (Your Name Here)";
-			ResizeRedraw = true;
-			BackColor = Color.Black;
-			MenuItem miNewDat = new MenuItem("New &Data...",
-				new EventHandler(MenuNewDataOnClick));
-			MenuItem miExit = new MenuItem("E&xit", 
-				new EventHandler(MenuFileExitOnClick));
-			MenuItem miDash = new MenuItem("-");
-			MenuItem miFile = new MenuItem("&File",
-				new MenuItem[] {miNewDat, miDash, miExit});
-			MenuItem miAbout = new MenuItem("&About",
-				new EventHandler(MenuAboutOnClick));
-			Menu = new MainMenu(new MenuItem[] {miFile, miAbout});
+            //
+            // TODO: Add any constructor code after InitializeComponent call
+            //
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
+            this.SetStyle(ControlStyles.UserPaint, true);
+            this.SetStyle(ControlStyles.DoubleBuffer, true);
+            Text = "COMP 4560:  Assignment 5 (200830) (Your Name Here)";
+            ResizeRedraw = true;
+            BackColor = Color.Black;
+            MenuItem miNewDat = new MenuItem("New &Data...",
+                new EventHandler(MenuNewDataOnClick));
+            MenuItem miExit = new MenuItem("E&xit",
+                new EventHandler(MenuFileExitOnClick));
+            MenuItem miDash = new MenuItem("-");
+            MenuItem miFile = new MenuItem("&File",
+                new MenuItem[] { miNewDat, miDash, miExit });
+            MenuItem miAbout = new MenuItem("&About",
+                new EventHandler(MenuAboutOnClick));
+            Menu = new MainMenu(new MenuItem[] { miFile, miAbout });
 
-			
-		}
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if (components != null) 
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose( disposing );
-		}
+        }
 
-		#region Windows Form Designer generated code
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Transformer));
             this.tbimages = new System.Windows.Forms.ImageList(this.components);
@@ -347,24 +359,24 @@ namespace asgn5v1
             this.ResumeLayout(false);
             this.PerformLayout();
 
-		}
-		#endregion
+        }
+        #endregion
 
-		/// <summary>
-		/// The main entry point for the application.
-		/// </summary>
-		[STAThread]
-		static void Main() 
-		{
-			Application.Run(new Transformer());
-		}
+        /// <summary>
+        /// The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main()
+        {
+            Application.Run(new Transformer());
+        }
 
-		protected override void OnPaint(PaintEventArgs pea)
-		{
-			Graphics grfx = pea.Graphics;
+        protected override void OnPaint(PaintEventArgs pea)
+        {
+            Graphics grfx = pea.Graphics;
             Pen pen = new Pen(Color.White, 3);
-			double temp;
-			int k;
+            double temp;
+            int k;
 
             if (gooddata)
             {
@@ -394,151 +406,200 @@ namespace asgn5v1
 
 
             } // end of gooddata block	
-		} // end of OnPaint
+        } // end of OnPaint
 
-		void MenuNewDataOnClick(object obj, EventArgs ea)
-		{
-			//MessageBox.Show("New Data item clicked.");
-			gooddata = GetNewData();
-			RestoreInitialImage();			
-		}
+        void MenuNewDataOnClick(object obj, EventArgs ea)
+        {
+            //MessageBox.Show("New Data item clicked.");
+            gooddata = GetNewData();
+            RestoreInitialImage();
+        }
 
-		void MenuFileExitOnClick(object obj, EventArgs ea)
-		{
-			Close();
-		}
+        void MenuFileExitOnClick(object obj, EventArgs ea)
+        {
+            Close();
+        }
 
-		void MenuAboutOnClick(object obj, EventArgs ea)
-		{
-			AboutDialogBox dlg = new AboutDialogBox();
-			dlg.ShowDialog();
-		}
+        void MenuAboutOnClick(object obj, EventArgs ea)
+        {
+            AboutDialogBox dlg = new AboutDialogBox();
+            dlg.ShowDialog();
+        }
 
-		void RestoreInitialImage()
-		{
-			Invalidate();
-		} // end of RestoreInitialImage
+        void RestoreInitialImage()
+        {
+            Array.Copy(initialMat, ctrans, initialMat.Length);
+            running = false;
+            timer.Stop();
+            //Refresh();
+            Invalidate();
+        } // end of RestoreInitialImage
 
-		bool GetNewData()
-		{
-			string strinputfile,text;
-			ArrayList coorddata = new ArrayList();
-			ArrayList linesdata = new ArrayList();
-			OpenFileDialog opendlg = new OpenFileDialog();
-			opendlg.Title = "Choose File with Coordinates of Vertices";
-			if (opendlg.ShowDialog() == DialogResult.OK)
-			{
-				strinputfile=opendlg.FileName;				
-				FileInfo coordfile = new FileInfo(strinputfile);
-				StreamReader reader = coordfile.OpenText();
-				do
-				{
-					text = reader.ReadLine();
-					if (text != null) coorddata.Add(text);
-				} while (text != null);
-				reader.Close();
-				DecodeCoords(coorddata);
-			}
-			else
-			{
-				MessageBox.Show("***Failed to Open Coordinates File***");
-				return false;
-			}
-            
-			opendlg.Title = "Choose File with Data Specifying Lines";
-			if (opendlg.ShowDialog() == DialogResult.OK)
-			{
-				strinputfile=opendlg.FileName;
-				FileInfo linesfile = new FileInfo(strinputfile);
-				StreamReader reader = linesfile.OpenText();
-				do
-				{
-					text = reader.ReadLine();
-					if (text != null) linesdata.Add(text);
-				} while (text != null);
-				reader.Close();
-				DecodeLines(linesdata);
-			}
-			else
-			{
-				MessageBox.Show("***Failed to Open Line Data File***");
-				return false;
-			}
-			scrnpts = new double[numpts,4];
-            
+        bool GetNewData()
+        {
+            string strinputfile, text;
+            ArrayList coorddata = new ArrayList();
+            ArrayList linesdata = new ArrayList();
+            OpenFileDialog opendlg = new OpenFileDialog();
+            opendlg.Title = "Choose File with Coordinates of Vertices";
+            if (opendlg.ShowDialog() == DialogResult.OK)
+            {
+                strinputfile = opendlg.FileName;
+                FileInfo coordfile = new FileInfo(strinputfile);
+                StreamReader reader = coordfile.OpenText();
+                do
+                {
+                    text = reader.ReadLine();
+                    if (text != null) coorddata.Add(text);
+                } while (text != null);
+                reader.Close();
+                DecodeCoords(coorddata);
+            }
+            else
+            {
+                MessageBox.Show("***Failed to Open Coordinates File***");
+                return false;
+            }
 
-			setIdentity(ctrans,4,4);  //initialize transformation matrix to identity
+            opendlg.Title = "Choose File with Data Specifying Lines";
+            if (opendlg.ShowDialog() == DialogResult.OK)
+            {
+                strinputfile = opendlg.FileName;
+                FileInfo linesfile = new FileInfo(strinputfile);
+                StreamReader reader = linesfile.OpenText();
+                do
+                {
+                    text = reader.ReadLine();
+                    if (text != null) linesdata.Add(text);
+                } while (text != null);
+                reader.Close();
+                DecodeLines(linesdata);
+            }
+            else
+            {
+                MessageBox.Show("***Failed to Open Line Data File***");
+                return false;
+            }
+            scrnpts = new double[numpts, 4];
 
-            
+            setIdentity(ctrans, 4, 4);  //initialize transformation matrix to identity
 
-            setIdentity(reflectMat, 4, 4);
-            reflectMat[1, 1] = -1;
-            ctrans = MatrixMultiplicationForDays(reflectMat, ctrans);
-
+            //Initial translate, scale, reflection, and translate matrices
             setIdentity(translMat, 4, 4);
             origin[0] = -vertices[0, 0];
             origin[1] = -vertices[0, 1];
             origin[2] = -vertices[0, 2];
             for (int i = 0; i < 3; i++)
                 translMat[3, i] = origin[i];
-            ctrans = MatrixMultiplicationForDays(translMat, ctrans);
 
             setIdentity(scaleMat, 4, 4);
             double scale = this.Height / 2 / (maxH - minH);
             scaleMat[0, 0] = scale;
             scaleMat[1, 1] = scale;
             scaleMat[2, 2] = scale;
-            scaleMat[3, 0] = -scale * midX;
-            scaleMat[3, 1] = -scale * midY;
-            ctrans = MatrixMultiplicationForDays(scaleMat, ctrans);
+
+            setIdentity(reflectMat, 4, 4);
+            reflectMat[1, 1] = -1;
 
             setIdentity(centreMat, 4, 4);
-            centreMat[3, 0] = 50;
-            centreMat[3, 1] = 50;
+            centreMat[3, 0] = this.Width / 2;
+            centreMat[3, 1] = this.Height / 2;
+
+            ctrans = MatrixMultiplicationForDays(translMat, ctrans);
+            ctrans = MatrixMultiplicationForDays(scaleMat, ctrans);
+            ctrans = MatrixMultiplicationForDays(reflectMat, ctrans);
             ctrans = MatrixMultiplicationForDays(centreMat, ctrans);
 
+
+            Array.Copy(ctrans, initialMat, ctrans.Length);
+
+            //Sets translate down matrix
             setIdentity(translDownMat, 4, 4);
-            translDownMat[3, 1] = -10;
+            translDownMat[3, 1] = 10;
+
+            //Sets translate up matrix
             setIdentity(translUpMat, 4, 4);
-            translUpMat[3, 1] = 10;
+            translUpMat[3, 1] = -10;
+
+            //Sets translate left matrix
             setIdentity(translLeftMat, 4, 4);
             translLeftMat[3, 0] = -10;
+
+            //Sets translate right matrix
             setIdentity(translRightMat, 4, 4);
             translRightMat[3, 0] = 10;
 
+            //Sets scale up matrix
             setIdentity(scaleUpMat, 4, 4);
             scaleUpMat[0, 0] = 1.1;
             scaleUpMat[1, 1] = 1.1;
             scaleUpMat[2, 2] = 1.1;
+
+            //Sets scale down matrix
             setIdentity(scaleDownMat, 4, 4);
             scaleDownMat[0, 0] = 0.9;
             scaleDownMat[1, 1] = 0.9;
             scaleDownMat[2, 2] = 0.9;
 
+            //Sets rotate x matrix
             setIdentity(rotateXMat, 4, 4);
+            rotateXMat[1, 1] = Math.Cos(0.05);
+            rotateXMat[1, 2] = -Math.Sin(0.05);
+            rotateXMat[2, 1] = Math.Sin(0.05);
+            rotateXMat[2, 2] = Math.Cos(0.05);
+
+            //Sets rotate y matrix
             setIdentity(rotateYMat, 4, 4);
+            rotateYMat[0, 0] = Math.Cos(0.05);
+            rotateYMat[0, 2] = -Math.Sin(0.05);
+            rotateYMat[2, 0] = Math.Sin(0.05);
+            rotateYMat[2, 2] = Math.Cos(0.05);
+
+            //Sets rotate z matrix
             setIdentity(rotateZMat, 4, 4);
+            rotateZMat[0, 0] = Math.Cos(0.05);
+            rotateZMat[0, 1] = -Math.Sin(0.05);
+            rotateZMat[1, 0] = Math.Sin(0.05);
+            rotateZMat[1, 1] = Math.Cos(0.05);
+
+            //Sets shear left matrix
+            setIdentity(shearLeftMat, 4, 4);
+            shearLeftMat[1, 0] = 0.1;
+
+            //Sets shear right matrix   
+            setIdentity(shearRightMat, 4, 4);
+            shearRightMat[1, 0] = -0.1;
+
+            //shearing things
+            shearingThings[0] = minW;
+            shearingThings[1] = minH * scale;
+            shearingThings[2] = 1;
+            shearingThings[3] = 1;
+
+            // MORE THINGS TO ADD.
+            timer.Tick += new EventHandler(TimerEventProcessor);
+            timer.Interval = 20;
 
 
             return true;
-		} // end of GetNewData
+        } // end of GetNewData
 
-		void DecodeCoords(ArrayList coorddata)
-		{
-			//this may allocate slightly more rows that necessary
-			vertices = new double[coorddata.Count,4];
-			numpts = 0;
-			string [] text = null;
-            
-			for (int i = 0; i < coorddata.Count; i++)
-			{
-				text = coorddata[i].ToString().Split(' ',',');
+        void DecodeCoords(ArrayList coorddata)
+        {
+            //this may allocate slightly more rows that necessary
+            vertices = new double[coorddata.Count, 4];
+            numpts = 0;
+            string[] text = null;
+
+            for (int i = 0; i < coorddata.Count; i++)
+            {
+                text = coorddata[i].ToString().Split(' ', ',');
                 vertices[numpts, 0] = double.Parse(text[0]);
-				if (vertices[numpts,0] < 0.0d)
-                    break;       
-                vertices[numpts, 1] = double.Parse(text[1]);            
-                vertices[numpts,2]= double.Parse(text[2]);
-				vertices[numpts,3] = 1.0d;
+                if (vertices[numpts, 0] < 0.0d)
+                    break;
+                vertices[numpts, 1] = double.Parse(text[1]);
+                vertices[numpts, 2] = double.Parse(text[2]);
+                vertices[numpts, 3] = 1.0d;
 
                 if (minW == -999 && minH == -999)
                 {
@@ -547,7 +608,7 @@ namespace asgn5v1
                 }
                 if (vertices[numpts, 0] > maxW)
                 {
-                    maxW = (int) vertices[numpts, 0];
+                    maxW = (int)vertices[numpts, 0];
                 }
                 if (vertices[numpts, 1] > maxH && vertices[numpts, 1] >= 0)
                 {
@@ -561,138 +622,294 @@ namespace asgn5v1
                 {
                     minH = (int)vertices[numpts, 1];
                 }
-                numpts++;						
-			}
+                numpts++;
+            }
 
             midX = (maxW - minW) / 2;
             midY = (maxH - minH) / 2;
 
         }// end of DecodeCoords
 
-		void DecodeLines(ArrayList linesdata)
-		{
-			//this may allocate slightly more rows that necessary
-			lines = new int[linesdata.Count,2];
-			numlines = 0;
-			string [] text = null;
-			for (int i = 0; i < linesdata.Count; i++)
-			{
-				text = linesdata[i].ToString().Split(' ',',');
-				lines[numlines,0]=int.Parse(text[0]);
-				if (lines[numlines,0] < 0) break;
-				lines[numlines,1]=int.Parse(text[1]);
-				numlines++;						
-			}
-		} // end of DecodeLines
+        void DecodeLines(ArrayList linesdata)
+        {
+            //this may allocate slightly more rows that necessary
+            lines = new int[linesdata.Count, 2];
+            numlines = 0;
+            string[] text = null;
+            for (int i = 0; i < linesdata.Count; i++)
+            {
+                text = linesdata[i].ToString().Split(' ', ',');
+                lines[numlines, 0] = int.Parse(text[0]);
+                if (lines[numlines, 0] < 0) break;
+                lines[numlines, 1] = int.Parse(text[1]);
+                numlines++;
+            }
+        } // end of DecodeLines
 
-		void setIdentity(double[,] A,int nrow,int ncol)
-		{
-			for (int i = 0; i < nrow;i++) 
-			{
-				for (int j = 0; j < ncol; j++)
-                    A[i,j] = 0.0d;
-				A[i,i] = 1.0d;
-			}
+        void setIdentity(double[,] A, int nrow, int ncol)
+        {
+            for (int i = 0; i < nrow; i++)
+            {
+                for (int j = 0; j < ncol; j++)
+                    A[i, j] = 0.0d;
+                A[i, i] = 1.0d;
+            }
 
         }// end of setIdentity
 
 
         private void Transformer_Load(object sender, System.EventArgs e)
-		{
-			
-		}
+        {
 
-		private void toolBar1_ButtonClick(object sender, System.Windows.Forms.ToolBarButtonClickEventArgs e)
-		{
-			if (e.Button == transleftbtn)
-			{
+        }
+
+        private void toolBar1_ButtonClick(object sender, System.Windows.Forms.ToolBarButtonClickEventArgs e)
+        {
+            if (e.Button == transleftbtn)
+            {
+
                 ctrans = MatrixMultiplicationForDays(translLeftMat, ctrans);
-				Refresh();
-			}
-			if (e.Button == transrightbtn) 
-			{
+                Refresh();
+            }
+            if (e.Button == transrightbtn)
+            {
                 ctrans = MatrixMultiplicationForDays(translRightMat, ctrans);
                 Refresh();
-			}
-			if (e.Button == transupbtn)
-			{
+            }
+            if (e.Button == transupbtn)
+            {
                 ctrans = MatrixMultiplicationForDays(translUpMat, ctrans);
                 Refresh();
-			}
-			
-			if(e.Button == transdownbtn)
-			{
+            }
+
+            if (e.Button == transdownbtn)
+            {
                 ctrans = MatrixMultiplicationForDays(translDownMat, ctrans);
                 Refresh();
-			}
-			if (e.Button == scaleupbtn) 
-			{
+            }
+            if (e.Button == scaleupbtn)
+            {
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 0] = -scrnpts[0, 0];
+                originMatrix[3, 1] = -scrnpts[0, 1];
+                originMatrix[3, 2] = -scrnpts[0, 2];
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 0] = scrnpts[0, 0];
+                deOriginMatrix[3, 1] = scrnpts[0, 1];
+                deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+                shearingThings[1] *= 1.1;
+
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
                 ctrans = MatrixMultiplicationForDays(scaleUpMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+
                 Refresh();
-			}
-			if (e.Button == scaledownbtn) 
-			{
+            }
+            if (e.Button == scaledownbtn)
+            {
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 0] = -scrnpts[0, 0];
+                originMatrix[3, 1] = -scrnpts[0, 1];
+                originMatrix[3, 2] = -scrnpts[0, 2];
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 0] = scrnpts[0, 0];
+                deOriginMatrix[3, 1] = scrnpts[0, 1];
+                deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+                shearingThings[1] *= 0.9;
+
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
                 ctrans = MatrixMultiplicationForDays(scaleDownMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+
                 Refresh();
-			}
+            }
             if (e.Button == rotxby1btn)
             {
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 0] = -scrnpts[0, 0];
+                originMatrix[3, 1] = -scrnpts[0, 1];
+                originMatrix[3, 2] = -scrnpts[0, 2];
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 0] = scrnpts[0, 0];
+                deOriginMatrix[3, 1] = scrnpts[0, 1];
+                deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
                 ctrans = MatrixMultiplicationForDays(rotateXMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+
                 Refresh();
 
             }
-			if (e.Button == rotyby1btn) 
-			{
+            if (e.Button == rotyby1btn)
+            {
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 0] = -scrnpts[0, 0];
+                originMatrix[3, 1] = -scrnpts[0, 1];
+                originMatrix[3, 2] = -scrnpts[0, 2];
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 0] = scrnpts[0, 0];
+                deOriginMatrix[3, 1] = scrnpts[0, 1];
+                deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
                 ctrans = MatrixMultiplicationForDays(rotateYMat, ctrans);
-                Refresh();
-			}
-			if (e.Button == rotzby1btn) 
-			{
-                ctrans = MatrixMultiplicationForDays(rotateZMat, ctrans);
-                Refresh();
-			}
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
 
-			if (e.Button == rotxbtn) 
-			{
                 Refresh();
             }
-			if (e.Button == rotybtn) 
-			{
-				
-			}
-			
-			if (e.Button == rotzbtn) 
-			{
-				
-			}
+            if (e.Button == rotzby1btn)
+            {
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 0] = -scrnpts[0, 0];
+                originMatrix[3, 1] = -scrnpts[0, 1];
+                originMatrix[3, 2] = -scrnpts[0, 2];
 
-			if(e.Button == shearleftbtn)
-			{
-				Refresh();
-			}
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 0] = scrnpts[0, 0];
+                deOriginMatrix[3, 1] = scrnpts[0, 1];
+                deOriginMatrix[3, 2] = scrnpts[0, 2];
 
-			if (e.Button == shearrightbtn) 
-			{
-				Refresh();
-			}
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+                ctrans = MatrixMultiplicationForDays(rotateZMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
 
-			if (e.Button == resetbtn)
-			{
-				RestoreInitialImage();
-			}
+                Refresh();
+            }
 
-			if(e.Button == exitbtn) 
-			{
-				Close();
-			}
+            if (e.Button == rotxbtn)
+            {
+                timer.Stop();
+                running = false;
+                rotX = true;
+                rotY = false;
+                rotZ = false;
+                timer.Start();
+                running = true;
 
-		}
+                while (running)
+                {
+                    Application.DoEvents();
+                }
+
+            }
+
+            if (e.Button == rotybtn)
+            {
+                timer.Stop();
+                running = false;
+                rotX = false;
+                rotY = true;
+                rotZ = false;
+                timer.Start();
+                running = true;
+
+                while (running)
+                {
+                    Application.DoEvents();
+                }
+            }
+
+            if (e.Button == rotzbtn)
+            {
+                timer.Stop();
+                running = false;
+                rotX = false;
+                rotY = false;
+                rotZ = true;
+                timer.Start();
+                running = true;
+
+                while (running)
+                {
+                    Application.DoEvents();
+                }
+            }
+
+            if (e.Button == shearleftbtn)
+            {
+                double maxY = 0;
+
+                for (int i = 0; i < scrnpts.GetLength(0); i++)
+                {
+                    if (scrnpts[i, 1] > maxY)
+                        maxY = scrnpts[i, 1];
+                }
+
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 1] = -maxY - shearingThings[1];
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 1] = maxY + shearingThings[1];
+
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+                ctrans = MatrixMultiplicationForDays(shearLeftMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+
+                Refresh();
+            }
+
+            if (e.Button == shearrightbtn)
+            {
+
+                double maxY = 0;
+
+                for (int i = 0; i < scrnpts.GetLength(0); i++)
+                {
+                    if (scrnpts[i, 1] > maxY)
+                        maxY = scrnpts[i, 1];
+                }
+
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 1] = -maxY - shearingThings[1];
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 1] = maxY + shearingThings[1];
+
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+                ctrans = MatrixMultiplicationForDays(shearRightMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+
+                Refresh();
+            }
+
+            if (e.Button == resetbtn)
+            {
+                RestoreInitialImage();
+            }
+
+            if (e.Button == exitbtn)
+            {
+                Close();
+            }
+
+        }
 
         private double[,] MatrixMultiplicationForDays(double[,] transfMatrix, double[,] origMatrix)
         {
-            
+
             double[,] newMatrix = new double[4, 4];
-            
+
             double temp;
             double d1;
             double d2;
@@ -705,11 +922,30 @@ namespace asgn5v1
                     {
                         d1 = transfMatrix[row, k];
                         d2 = origMatrix[k, col];
-                        temp += transfMatrix[row, k] * origMatrix[k, col];
+                        temp += origMatrix[row, k] * transfMatrix[k, col];
                     }
                     newMatrix[row, col] = temp;
-                } 
+                }
             }
+
+            //double temp2;
+            //double[] newMatrix2 = new double[4];
+            //for (int row = 0; row < 1; row++)
+            //{
+            //    for (int col = 0; col < 4; col++)
+            //    {
+            //        temp2 = 0.0d;
+            //        for (int k = 0; k < 4; k++)
+            //        {
+            //            d1 = transfMatrix[row, k];
+            //            d2 = origMatrix[k, col];
+            //            temp2 += origMatrix[row, k] * transfMatrix[k, col];
+            //        }
+            //        newMatrix[row, col] = temp2;
+            //    }
+            //}
+            //shearingThings = newMatrix2;
+
             return newMatrix;
         }
 
@@ -717,8 +953,84 @@ namespace asgn5v1
         {
 
         }
-		
-	}
 
-	
-}
+        private void rotateX()
+        {
+            double[,] originMatrix = new double[4, 4];
+            setIdentity(originMatrix, 4, 4);
+            originMatrix[3, 0] = -scrnpts[0, 0];
+            originMatrix[3, 1] = -scrnpts[0, 1];
+            originMatrix[3, 2] = -scrnpts[0, 2];
+
+            double[,] deOriginMatrix = new double[4, 4];
+            setIdentity(deOriginMatrix, 4, 4);
+            deOriginMatrix[3, 0] = scrnpts[0, 0];
+            deOriginMatrix[3, 1] = scrnpts[0, 1];
+            deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+            ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+            ctrans = MatrixMultiplicationForDays(rotateXMat, ctrans);
+            ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+            Refresh();
+
+        }
+
+        private void rotateY()
+        {
+            double[,] originMatrix = new double[4, 4];
+            setIdentity(originMatrix, 4, 4);
+            originMatrix[3, 0] = -scrnpts[0, 0];
+            originMatrix[3, 1] = -scrnpts[0, 1];
+            originMatrix[3, 2] = -scrnpts[0, 2];
+
+            double[,] deOriginMatrix = new double[4, 4];
+            setIdentity(deOriginMatrix, 4, 4);
+            deOriginMatrix[3, 0] = scrnpts[0, 0];
+            deOriginMatrix[3, 1] = scrnpts[0, 1];
+            deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+            ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+            ctrans = MatrixMultiplicationForDays(rotateYMat, ctrans);
+            ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+            Refresh();
+
+        }
+
+        private void rotateZ()
+        {
+            double[,] originMatrix = new double[4, 4];
+            setIdentity(originMatrix, 4, 4);
+            originMatrix[3, 0] = -scrnpts[0, 0];
+            originMatrix[3, 1] = -scrnpts[0, 1];
+            originMatrix[3, 2] = -scrnpts[0, 2];
+
+            double[,] deOriginMatrix = new double[4, 4];
+            setIdentity(deOriginMatrix, 4, 4);
+            deOriginMatrix[3, 0] = scrnpts[0, 0];
+            deOriginMatrix[3, 1] = scrnpts[0, 1];
+            deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+            ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+            ctrans = MatrixMultiplicationForDays(rotateZMat, ctrans);
+            ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+            Refresh();
+
+        }
+
+        private void TimerEventProcessor(Object o, EventArgs ea)
+        {
+            if (rotX && !rotY && !rotZ)
+            {
+                rotateX();
+            }
+            if (!rotX && rotY && !rotZ)
+            {
+                rotateY();
+            }
+            if (!rotX && !rotY && rotZ)
+            {
+                rotateZ();
+            }
+        }
+    } // End of Class	
+} // End of Namespace
