@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.Data;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace asgn5v1
 {
@@ -50,6 +51,8 @@ namespace asgn5v1
 		private System.Windows.Forms.ToolBarButton resetbtn;
 		private System.Windows.Forms.ToolBarButton exitbtn;
 		int[,] lines;
+
+        private bool running;
 
         double[,] centreMat = new double[4, 4];
         double[,] originMat = new double[4, 4];
@@ -485,8 +488,6 @@ namespace asgn5v1
             scaleMat[0, 0] = scale;
             scaleMat[1, 1] = scale;
             scaleMat[2, 2] = scale;
-            //scaleMat[3, 0] = -scale * midX;
-            //scaleMat[3, 1] = -scale * midY;
             
             setIdentity(reflectMat, 4, 4);
             reflectMat[1, 1] = -1;
@@ -552,6 +553,13 @@ namespace asgn5v1
             rotateZMat[1, 0] = Math.Sin(0.05);
             rotateZMat[1, 1] = Math.Cos(0.05);
 
+            //Sets shear left matrix
+            setIdentity(shearLeftMat, 4, 4);
+            shearLeftMat[1, 0] = 0.5;
+
+            //Sets shear right matrix   
+            setIdentity(shearRightMat, 4, 4);
+            shearRightMat[1, 0] = -0.5;
 
             return true;
 		} // end of GetNewData
@@ -763,27 +771,139 @@ namespace asgn5v1
 
 			if (e.Button == rotxbtn) 
 			{
-                Refresh();
+                //running = false;
+                //Thread rotateThread;
+                //running = true;
+                //rotateThread = new Thread(rotXThrdFunc);
+                //rotateThread.Start();
+
+                //while (running)
+                //    Refresh();
+                //Refresh();
+
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 0] = -scrnpts[0, 0];
+                originMatrix[3, 1] = -scrnpts[0, 1];
+                originMatrix[3, 2] = -scrnpts[0, 2];
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 0] = scrnpts[0, 0];
+                deOriginMatrix[3, 1] = scrnpts[0, 1];
+                deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+                for (int i = 0; i < 126; i++)
+                {
+                    ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+                    ctrans = MatrixMultiplicationForDays(rotateXMat, ctrans);
+                    ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+                    Refresh();
+                    System.Threading.Thread.Sleep(10);
+                }
+                    
+                
             }
+
 			if (e.Button == rotybtn) 
 			{
-				
-			}
-			
-			if (e.Button == rotzbtn) 
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 0] = -scrnpts[0, 0];
+                originMatrix[3, 1] = -scrnpts[0, 1];
+                originMatrix[3, 2] = -scrnpts[0, 2];
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 0] = scrnpts[0, 0];
+                deOriginMatrix[3, 1] = scrnpts[0, 1];
+                deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+                for (int i = 0; i < 126; i++)
+                {
+                    ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+                    ctrans = MatrixMultiplicationForDays(rotateYMat, ctrans);
+                    ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+                    Refresh();
+                    System.Threading.Thread.Sleep(10);
+                }
+
+            }
+
+            if (e.Button == rotzbtn) 
 			{
-				
-			}
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 0] = -scrnpts[0, 0];
+                originMatrix[3, 1] = -scrnpts[0, 1];
+                originMatrix[3, 2] = -scrnpts[0, 2];
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 0] = scrnpts[0, 0];
+                deOriginMatrix[3, 1] = scrnpts[0, 1];
+                deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+                for (int i = 0; i < 126; i++)
+                {
+                    ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+                    ctrans = MatrixMultiplicationForDays(rotateZMat, ctrans);
+                    ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+                    Refresh();
+                    System.Threading.Thread.Sleep(10);
+                }
+            }
 
 			if(e.Button == shearleftbtn)
 			{
+                double maxY = 0;
+
+                for (int i = 0; i < scrnpts.GetLength(0); i++)
+                {
+                    if (scrnpts[i, 1] > maxY)
+                        maxY = scrnpts[i, 1];
+                }
+
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 1] = -maxY;
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 1] = maxY;
+
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+                ctrans = MatrixMultiplicationForDays(shearLeftMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+
 				Refresh();
 			}
 
 			if (e.Button == shearrightbtn) 
 			{
-				Refresh();
-			}
+
+                double maxY = 0;
+
+                for (int i = 0; i < scrnpts.GetLength(0); i++)
+                {
+                    if (scrnpts[i, 1] > maxY)
+                        maxY = scrnpts[i, 1];
+                }
+
+                double[,] originMatrix = new double[4, 4];
+                setIdentity(originMatrix, 4, 4);
+                originMatrix[3, 1] = -maxY;
+
+                double[,] deOriginMatrix = new double[4, 4];
+                setIdentity(deOriginMatrix, 4, 4);
+                deOriginMatrix[3, 1] = maxY;
+
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+                ctrans = MatrixMultiplicationForDays(shearRightMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+
+                Refresh();
+            }
 
 			if (e.Button == resetbtn)
 			{
@@ -826,7 +946,77 @@ namespace asgn5v1
         {
 
         }
+
+        private void rotXThrdFunc()
+        {
+            double[,] originMatrix = new double[4, 4];
+            setIdentity(originMatrix, 4, 4);
+            originMatrix[3, 0] = -scrnpts[0, 0];
+            originMatrix[3, 1] = -scrnpts[0, 1];
+            originMatrix[3, 2] = -scrnpts[0, 2];
+
+            double[,] deOriginMatrix = new double[4, 4];
+            setIdentity(deOriginMatrix, 4, 4);
+            deOriginMatrix[3, 0] = scrnpts[0, 0];
+            deOriginMatrix[3, 1] = scrnpts[0, 1];
+            deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+            while (running)
+            {
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+                ctrans = MatrixMultiplicationForDays(rotateXMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+                //Refresh();
+                System.Threading.Thread.Sleep(20);
+            }
+        }
+
+        private void rotYThrdFunc()
+        {
+            double[,] originMatrix = new double[4, 4];
+            setIdentity(originMatrix, 4, 4);
+            originMatrix[3, 0] = -scrnpts[0, 0];
+            originMatrix[3, 1] = -scrnpts[0, 1];
+            originMatrix[3, 2] = -scrnpts[0, 2];
+
+            double[,] deOriginMatrix = new double[4, 4];
+            setIdentity(deOriginMatrix, 4, 4);
+            deOriginMatrix[3, 0] = scrnpts[0, 0];
+            deOriginMatrix[3, 1] = scrnpts[0, 1];
+            deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+            while (running)
+            {
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+                ctrans = MatrixMultiplicationForDays(rotateYMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+                System.Threading.Thread.Sleep(20);
+            }
+
+        }
 		
+        private void rotZThrdFunc()
+        {
+            double[,] originMatrix = new double[4, 4];
+            setIdentity(originMatrix, 4, 4);
+            originMatrix[3, 0] = -scrnpts[0, 0];
+            originMatrix[3, 1] = -scrnpts[0, 1];
+            originMatrix[3, 2] = -scrnpts[0, 2];
+
+            double[,] deOriginMatrix = new double[4, 4];
+            setIdentity(deOriginMatrix, 4, 4);
+            deOriginMatrix[3, 0] = scrnpts[0, 0];
+            deOriginMatrix[3, 1] = scrnpts[0, 1];
+            deOriginMatrix[3, 2] = scrnpts[0, 2];
+
+            while (running)
+            {
+                ctrans = MatrixMultiplicationForDays(originMatrix, ctrans);
+                ctrans = MatrixMultiplicationForDays(rotateZMat, ctrans);
+                ctrans = MatrixMultiplicationForDays(deOriginMatrix, ctrans);
+                System.Threading.Thread.Sleep(20);
+            }
+        }
 	}
 
 	
